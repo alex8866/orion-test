@@ -261,8 +261,8 @@ done
 # Current SUSE 11 can not have openjpeg package, in order to generate excel on SUSE 11, need to install openjpeg from source first.
 
 # Generate Excel
-excel=$($PWD/gen_xls.py "$RESULTDIR")
-echo "Results are recorded in file: $excel"
+#excel=$($PWD/gen_xls.py "$RESULTDIR")
+#echo "Results are recorded in file: $excel"
 
 # Clear environment
 rm -f $LUNFILE
