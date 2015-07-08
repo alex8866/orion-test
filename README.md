@@ -27,7 +27,9 @@
 
 5. 因为Orion工具自身的原因，Orion只测试Small Random I/O的IOPS，对于Large Random IO只测试MBPS，所以目前的测试结果中的IOPS均是Small Random I/O
 
-6. Sample command: ./orion-test.sh -d /dev/sdc1 -D 20 -t f2fs -R rw -a kfifo -x 3 -O 10 -s 8 -l 2048 -o $PWD
+6. 如果生成Excel报错，很可能是缺少某些Python包，或者Python包版本引起的，只需注释到该脚本最后两行即可
+
+7. Sample command: ./orion-test.sh -d /dev/sdc1 -D 20 -t f2fs -R rw -a kfifo -x 3 -O 10 -s 8 -l 2048 -o $PWD
 
 ## TODO List:
 
@@ -36,3 +38,10 @@
 2. 增加结果对比功能
 
 3. 加入结果分析，测试偏差，正态分布等
+
+
+## 依赖包:
+
+1. openjpeg //注：SUSE 11上没有openjpeg安装包，所以在SUSE 11上生成Excel会失败
+
+2. gnuplot

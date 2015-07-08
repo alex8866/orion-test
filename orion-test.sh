@@ -9,12 +9,17 @@ Note:
 目录下的*.txt文件
 5. 在运行脚本前必须指定Orion工具的命令路径，默认是: $PWD/orion_linux_x86-64
 6. 因为Orion工具自身的原因，Orion只测试Small Random I/O的IOPS，对于Large Random IO只测试MBPS，所以目前的测试结果中的IOPS均是Small Random I/O
-7. Sample command: ./orion-test.sh -d /dev/sdc1 -D 20 -t f2fs -R rw -a kfifo -x 3 -O 10 -s 8 -l 2048 -o $PWD
+7. 如果生成Excel报错，很可能是缺少某些Python包，或者Python包版本引起的，只需注释到该脚本最后两行即可
+8. Sample command: ./orion-test.sh -d /dev/sdc1 -D 20 -t f2fs -R rw -a kfifo -x 3 -O 10 -s 8 -l 2048 -o $PWD -v
 
 TODO List:
 1. 增加MBPS, Latency的测试
 2. 增加结果对比功能
 3. 加入结果分析，测试偏差，正态分布等
+
+依赖包:
+1. gnuplot
+2. PIL
 EOF
 
 VERSION="0.1.0"
@@ -150,9 +155,19 @@ ORIONTOOL="${ORIONTOOL:-$PWD/orion_linux_x86-64}"
     mount -t "$FILESYSTEM" "$DEVICE" "$TESTDIR" &>/dev/null
 }
 
+[ ! -d "$RESULTDIR" ] && mkdir -p "$RESULTDIR"
+
 # Create orion lun file
 [ "$FILESYSTEM" != "" ] && {
     echo "$TESTDIR/orion-test.txt" > "$LUNFILE"
+
+    # Prepare the test file
+    [ ! -f "$TESTDIR/orion-test.txt" ] && {
+        echo -e "${red}ERROR: You need to prepare test file: "$TESTDIR/orion-test.txt" first!
+       You can use dd to create the test file with reasonable size.
+       eg: dd if=/dev/zero of=$TESTDIR/orion-test.txt bs=1M count=5000${normal}"
+       exit
+    }
     ECHOFILESYSTEM="$FILESYSTEM"
 } || {
     echo "$DEVICE" > "$LUNFILE"
@@ -181,6 +196,7 @@ For large random I/O, we only care about the MBPS
 Currently orion-test script only collect the results for IOPS
 "
 
+echo "############### `date +"%Y-%m-%d %H:%M:%S"`: Test Start  ###############"
 exit
 for type in $looptype
 do
@@ -191,7 +207,7 @@ do
         do
             "$ORIONTOOL" -run advanced -testname oriontest -num_disks 1 -size_small "$SMALLSIZE" -size_large "$LARGESIZE" -type rand -simulate concat -write "$type" -duration "$DURATION" -matrix point -num_small "$OUTSTANDING" -num_large "$OUTSTANDING"
 
-            tail -1 *_iops.csv|awk -F'[, ]' '{print $NF}' >>  iops_${arr[$type]}_${sc}.txt
+            tail -1 *_iops.csv|awk -F'[, ]' '{print $NF}' >>  $RESULTDIR/iops_${arr[$type]}_${sc}.txt
             rm -f oriontest_*.txt *.csv
         done
     done
@@ -212,7 +228,7 @@ do
     echo "$sc $value" >> /tmp/orion_"$rw".dat
 done
 
-echo "############################ Results ############################"
+echo "############### Test Results ###############"
 for type in $looptype
 do
     cat /tmp/orion_${arr[$type]}.dat |
@@ -239,8 +255,15 @@ set xlabel "Scheduler"
 set output "$RESULTDIR/orion_${arr[$type]}.png"
 plot "$RESULTDIR/orion_${arr[$type]}.dat" using 2:xtic(1) title "IOPS"
 EOF
+    echo "Final Histogram File: $RESULTDIR/orion_${arr[$type]}.png"
 done
+
+# Current SUSE 11 can not have openjpeg package, in order to generate excel on SUSE 11, need to install openjpeg from source first.
 
 # Generate Excel
 excel=$($PWD/gen_xls.py "$RESULTDIR")
 echo "Results are recorded in file: $excel"
+
+# Clear environment
+rm -f $LUNFILE
+echo "############### `date +"%Y-%m-%d %H:%M:%S"`: Test End  ###############"

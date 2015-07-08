@@ -1,9 +1,9 @@
 #!/usr/bin/env python2
 import os, re, string, urllib2
 import numpy as np
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
+#import matplotlib
+#matplotlib.use('Agg')
+#import matplotlib.pyplot as plt
 from PIL import Image
 
 from copy import deepcopy
