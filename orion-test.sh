@@ -8,7 +8,8 @@ Note:
 4. 在最终输出结果中，IOPS值是所有测试的平均值, 每次测试的具体值，可以查看RESULTDIR
 目录下的*.txt文件
 5. 在运行脚本前必须指定Orion工具的命令路径，默认是: $PWD/orion_linux_x86-64
-6. Sample command: ./orion-test.sh -d /dev/sdc1 -D 20 -t f2fs -R rw -a kfifo -x 3 -O 10 -s 8 -l 2048 -o $PWD
+6. 因为Orion工具自身的原因，Orion只测试Small Random I/O的IOPS，对于Large Random IO只测试MBPS，所以目前的测试结果中的IOPS均是Small Random I/O
+7. Sample command: ./orion-test.sh -d /dev/sdc1 -D 20 -t f2fs -R rw -a kfifo -x 3 -O 10 -s 8 -l 2048 -o $PWD
 
 TODO List:
 1. 增加MBPS, Latency的测试
@@ -33,6 +34,8 @@ orion-test [-dDtRaxOslo]
     -l: Block size for large random I/O
     -o: Results directoroy
     -h: Print this help message
+    -V: Version
+    -v: verbose
 EOF
 
     exit
@@ -49,7 +52,7 @@ function deal()
     echo "scale=2;$num/$line" | bc
 }
 
-while getopts d:t:R:a:x:D:O:l:s:o:h opt
+while getopts d:t:R:a:x:D:O:l:s:o:hvV opt
 do
     case $opt in
         d)
@@ -86,8 +89,15 @@ do
             usage
             exit
             ;;
+        V)
+            echo "orion-test version $VERSION"
+            exit
+            ;;
+        v)
+            VERBOSE=True
+            ;;
         *)
-            Usage
+            usage
             ;;
     esac
 done
@@ -150,7 +160,7 @@ ORIONTOOL="${ORIONTOOL:-$PWD/orion_linux_x86-64}"
 }
 
 # Print infomation
-echo "
+[ "$VERBOSE" == "True" ] && echo "
 orion-test Version: $VERSION
 Orion Tool Binary File: $ORIONTOOL
 Test Device: $DEVICE
@@ -171,6 +181,7 @@ For large random I/O, we only care about the MBPS
 Currently orion-test script only collect the results for IOPS
 "
 
+exit
 for type in $looptype
 do
     for sc in $SCHEDULER
